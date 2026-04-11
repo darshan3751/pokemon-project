@@ -22,8 +22,10 @@ df = pd.DataFrame([pokemon])
 # Connect to DuckDB
 con = duckdb.connect("pokemon.db")
 
-# Create table and insert data
+# Staging table
 con.execute("CREATE TABLE IF NOT EXISTS staging_pokemon AS SELECT * FROM df")
+
+# Clean table (transformation)
 con.execute("""
 CREATE TABLE IF NOT EXISTS clean_pokemon AS
 SELECT 
@@ -38,7 +40,7 @@ SELECT
 FROM staging_pokemon
 """)
 
-# Query data
+# Query clean data
 result = con.execute("SELECT * FROM clean_pokemon").fetchdf()
 
 print("Clean Data:")

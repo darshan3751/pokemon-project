@@ -16,9 +16,11 @@ def get_pokemon_data(pokemon_id):
 }
 
 # Fetch data
+num = int(input("Enter number of Pokemon to fetch: "))
+
 pokemon_list = []
 
-for i in range(1, 11):  # 10 pokemon
+for i in range(1, num + 1):
     pokemon = get_pokemon_data(i)
     pokemon_list.append(pokemon)
 

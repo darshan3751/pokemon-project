@@ -14,10 +14,13 @@ def get_pokemon_data(pokemon_id):
     }
 
 # Fetch data
-pokemon = get_pokemon_data(1)
+pokemon_list = []
 
-# Convert to DataFrame
-df = pd.DataFrame([pokemon])
+for i in range(1, 11):  # 10 pokemon
+    pokemon = get_pokemon_data(i)
+    pokemon_list.append(pokemon)
+
+df = pd.DataFrame(pokemon_list)
 
 # Connect to DuckDB
 con = duckdb.connect("pokemon.db")
@@ -45,3 +48,6 @@ result = con.execute("SELECT * FROM clean_pokemon").fetchdf()
 
 print("Clean Data:")
 print(result)
+
+result.to_csv("pokemon_output.csv", index=False)
+print("CSV file created!")

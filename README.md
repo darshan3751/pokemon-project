@@ -1,20 +1,34 @@
-# Pokémon API Project
+# 🚀 Pokémon Data Pipeline Project
 
 ## 📌 Overview
-This project fetches Pokémon data from an API using Python.
+This project demonstrates an end-to-end data pipeline using Python and SQL.
 
-## 🚀 Features
-- Fetch data from API
-- Display Pokémon name, height, and weight
+## ⚙️ Pipeline Flow
+API → Staging → Clean → Fact → Dimension → Analysis → CSV Export
 
-## 🛠️ Tech Used
+## 🛠️ Tech Stack
 - Python
-- Requests library
+- DuckDB
+- SQL
+- Pandas
 - Git & GitHub
+
+## 📊 Features
+- Extract data from PokeAPI
+- Store raw data in staging layer
+- Perform data transformation using SQL
+- Create fact and dimension tables (Star Schema)
+- Perform analysis queries
+- Export results to CSV
+- Dynamic user input for dataset size
 
 ## ▶️ How to Run
 1. Install dependencies:
-   pip install requests
+   pip install -r requirements.txt
 
-2. Run the script:
+2. Run project:
    python main.py
+
+## 📁 Output
+- Clean dataset stored in DuckDB
+- CSV file generated for visualization

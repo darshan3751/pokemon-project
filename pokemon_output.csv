@@ -1,0 +1,11 @@
+id,name,height,weight,base_experience,type,weight_category
+1,BULBASAUR,7,69,64,grass,Light
+2,IVYSAUR,10,130,142,grass,Heavy
+3,VENUSAUR,20,1000,236,grass,Heavy
+4,CHARMANDER,6,85,62,fire,Light
+5,CHARMELEON,11,190,142,fire,Heavy
+6,CHARIZARD,17,905,240,fire,Heavy
+7,SQUIRTLE,5,90,63,water,Light
+8,WARTORTLE,10,225,142,water,Heavy
+9,BLASTOISE,16,855,239,water,Heavy
+10,CATERPIE,3,29,39,bug,Light

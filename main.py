@@ -1,101 +1,79 @@
-import requests
+from extract import get_pokemon_data
 import duckdb
 import pandas as pd
 
-def get_pokemon_data(pokemon_id):
-    url = f"https://pokeapi.co/api/v2/pokemon/{pokemon_id}"
-    data = requests.get(url).json()
+def main():
+    print("\n🚀 Starting Data Pipeline...")
 
-    return {
-    "id": data["id"],
-    "name": data["name"],
-    "height": data["height"],
-    "weight": data["weight"],
-    "base_experience": data["base_experience"],
-    "type": data["types"][0]["type"]["name"]
-}
+    # Connect to DuckDB
+    con = duckdb.connect("pokemon.db")
 
-# Fetch data
-num = int(input("Enter number of Pokemon to fetch: "))
+    # User input
+    num = int(input("Enter number of Pokemon: "))
+    print(f"Fetching {num} Pokemon...")
 
-pokemon_list = []
+    # Get existing IDs (incremental load)
+    try:
+        existing_ids = con.execute(
+            "SELECT id FROM staging_pokemon"
+        ).fetchdf()["id"].tolist()
+    except:
+        existing_ids = []
 
-for i in range(1, num + 1):
-    pokemon = get_pokemon_data(i)
-    pokemon_list.append(pokemon)
+    pokemon_list = []
 
-df = pd.DataFrame(pokemon_list)
+    # Fetch new data only
+    for i in range(1, num + 1):
+        if i not in existing_ids:
+            pokemon = get_pokemon_data(i)
+            pokemon_list.append(pokemon)
 
-# Connect to DuckDB
-con = duckdb.connect("pokemon.db")
+    df = pd.DataFrame(pokemon_list)
 
-# Staging table
-con.execute("CREATE TABLE IF NOT EXISTS staging_pokemon AS SELECT * FROM df")
+    print(f"New records fetched: {len(df)}")
 
-# Clean table (transformation)
-con.execute("DROP TABLE IF EXISTS clean_pokemon")
+    # Load into staging
+    if len(existing_ids) == 0:
+        con.execute("CREATE TABLE IF NOT EXISTS staging_pokemon AS SELECT * FROM df")
+    else:
+        if len(df) > 0:
+            con.execute("INSERT INTO staging_pokemon SELECT * FROM df")
 
-con.execute("""
-CREATE TABLE clean_pokemon AS
-SELECT 
-    id,
-    UPPER(name) AS name,
-    height,
-    weight,
-    base_experience,
-    type,
-    CASE 
-        WHEN weight > 100 THEN 'Heavy'
-        ELSE 'Light'
-    END AS weight_category
-FROM staging_pokemon
-""")
+    print("Data stored in staging table")
 
-# Query clean data
-result = con.execute("SELECT * FROM clean_pokemon").fetchdf()
+    # Transform (clean layer)
+    con.execute("DROP TABLE IF EXISTS clean_pokemon")
 
-print("Clean Data:")
-print(result)
+    con.execute("""
+    CREATE TABLE clean_pokemon AS
+    SELECT 
+        id,
+        UPPER(name) AS name,
+        height,
+        weight,
+        base_experience,
+        type,
+        CASE 
+            WHEN weight > 100 THEN 'Heavy'
+            ELSE 'Light'
+        END AS weight_category
+    FROM staging_pokemon
+    """)
 
-result.to_csv("pokemon_output.csv", index=False)
-print("CSV file created!")
+    print("Data transformed (clean table created)")
 
-# avg experience by type
-result1 = con.execute("""
-SELECT 
-    type,
-    AVG(base_experience) as avg_exp
-FROM clean_pokemon
-GROUP BY type
-ORDER BY avg_exp DESC
-""").fetchdf()
+    # Query result
+    result = con.execute("SELECT * FROM clean_pokemon").fetchdf()
 
-print("\nAverage Experience by Type:")
-print(result1)
+    print("\nClean Data:")
+    print(result)
 
-# heviest pokemon
-result2 = con.execute("""
-SELECT 
-    type,
-    MAX(weight) as max_weight
-FROM clean_pokemon
-GROUP BY type
-""").fetchdf()
+    # Export
+    result.to_csv("pokemon_output.csv", index=False)
 
-print("\nHeaviest Pokemon per Type:")
-print(result2)
+    print("CSV file created successfully")
+    print("Pipeline completed successfully ✅")
 
-# top 5 strong pokemon
-result3 = con.execute("""
-SELECT 
-    name,
-    base_experience
-FROM clean_pokemon
-ORDER BY base_experience DESC
-LIMIT 5
-""").fetchdf()
 
-print("\nTop 5 Strongest Pokemon:")
-print(result3)
-
-result3.to_csv("top_pokemon.csv", index=False)
+if __name__ == "__main__":
+    main()

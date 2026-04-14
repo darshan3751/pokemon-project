@@ -1,16 +1,26 @@
 from extract import get_pokemon_data
+from config import DB_NAME
 import duckdb
 import pandas as pd
+import logging
+import time
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s"
+)
 
 def main():
-    print("\n🚀 Starting Data Pipeline...")
+    logging.info("Starting Data Pipeline")
+    time.sleep(1)
 
     # Connect to DuckDB
-    con = duckdb.connect("pokemon.db")
+    con = duckdb.connect(DB_NAME)
 
     # User input
     num = int(input("Enter number of Pokemon: "))
-    print(f"Fetching {num} Pokemon...")
+    logging.info(f"Fetching {num} Pokemon...")
+    time.sleep(1)
 
     # Get existing IDs (incremental load)
     try:
@@ -26,11 +36,13 @@ def main():
     for i in range(1, num + 1):
         if i not in existing_ids:
             pokemon = get_pokemon_data(i)
-            pokemon_list.append(pokemon)
+            if pokemon is not None:
+                pokemon_list.append(pokemon)
 
     df = pd.DataFrame(pokemon_list)
 
-    print(f"New records fetched: {len(df)}")
+    logging.info(f"New records fetched: {len(df)}")
+    time.sleep(1)
 
     # Load into staging
     if len(existing_ids) == 0:
@@ -39,7 +51,8 @@ def main():
         if len(df) > 0:
             con.execute("INSERT INTO staging_pokemon SELECT * FROM df")
 
-    print("Data stored in staging table")
+    logging.info("Data stored in staging table")
+    time.sleep(1)
 
     # Transform (clean layer)
     con.execute("DROP TABLE IF EXISTS clean_pokemon")
@@ -60,19 +73,24 @@ def main():
     FROM staging_pokemon
     """)
 
-    print("Data transformed (clean table created)")
+    logging.info("Transformation completed")
+    time.sleep(1)
 
     # Query result
     result = con.execute("SELECT * FROM clean_pokemon").fetchdf()
 
     print("\nClean Data:")
+    time.sleep(2)
     print(result)
+    logging.info("Clean data displayed")
+    time.sleep(1)
 
     # Export
     result.to_csv("pokemon_output.csv", index=False)
+    logging.info("CSV file created successfully")
+    time.sleep(1)
 
-    print("CSV file created successfully")
-    print("Pipeline completed successfully ✅")
+    logging.info("Pipeline completed successfully")
 
 
 if __name__ == "__main__":
